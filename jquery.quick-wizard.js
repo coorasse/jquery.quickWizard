@@ -3,10 +3,10 @@
     $.fn.quickWizard = function (options, callback) {
         
         var settings = {
-            'prevButton': '<button id="form-wizard-prev" type="button">Previous</button>',
-            'nextButton': '<button id="form-wizard-next" type="button">Next</button>',
+            'prevButton': '<button id="form-wizard-prev" type="button" class="buttonStyle littleText">Torna al passo precedente</button>',
+            'nextButton': '<button id="form-wizard-next" type="button" class="buttonStyle littleText">Procedi</button>',
             'activeClass': 'form-wizard-active',
-            'element': 'fieldset',
+            'element': 'div.step',
             'submit': '[type = "submit"]',
             'root': null,
             'prevArgs': [0],
@@ -14,7 +14,7 @@
             'disabledClass': 'form-wizard-disabled',
             'containerClass' : 'form-wizard-container',
             'breadCrumb': true,
-            'breadCrumbElement': 'legend',
+            'breadCrumbElement': 'div.legend',
             'breadCrumbListOpen': '<ol class="bread-crumb">',
             'breadCrumbListClose': '</ol>',
             'breadCrumbListElementOpen': '<li>',
@@ -111,7 +111,7 @@
 
                 /* Check to see if the forms are valid before moving on */
 
-                if (active.find(":input").valid()) {
+                if (validElement()) {
                     var nextSet = active.next(settings.element);
                     var afterNextSet = nextSet.next(settings.element);
                     if (nextSet.length) {
@@ -125,8 +125,10 @@
                         insertedNextCallback = function () { active.css('position', active.data('posiiton')); };
 
                         /* Call show and hide with the user provided arguments */
-                        active.css('position', 'absolute').hide.apply(active, settings.nextArgs);
-                        nextSet.show.apply(nextSet, settings.prevArgs);
+                        active.fadeOut('slow',function() {
+                            nextSet.fadeIn('slow',function() {
+                        	});
+                        });
                         
                         /* If bread crumb menu is used make those changes */
                         if (settings.breadCrumb) {
@@ -147,6 +149,8 @@
                         $(next).hide();
                         submitButton.show();
                     }
+                    
+                    settings.nextCallback(nextSet);
                 }
             });
 
@@ -159,8 +163,12 @@
                     $(prevSet).toggleClass(settings.activeClass);                    
                     prevSet.data('posiiton', prevSet.css('position'));
                     insertedNextCallback = function () { prevSet.css('position', prevSet.data('posiiton')); };
-                    active.hide.apply(active, settings.prevArgs);
-                    prevSet.css('position', 'absolute').show.apply(prevSet, settings.nextArgs);
+                    
+                     active.fadeOut('slow',function() {
+                        	prevSet.fadeIn('slow',function() {
+                        	});
+                        });
+                    
                     if (settings.breadCrumb) {
                         breadCrumbList.find('.' + settings.breadCrumbActiveClass).removeClass(settings.breadCrumbActiveClass).prev().addClass(settings.breadCrumbActiveClass);
                     }
@@ -178,3 +186,20 @@
 
     };
 })(jQuery);
+
+
+function validElement() {
+  //If the form is valid then go to next else dont
+  var valid = true;
+  // this will cycle through all visible inputs and attempt to validate all of them.
+  // if validations fail 'valid' is set to false
+  $('[data-validate]:input:visible').each(function() {
+    var settings = window[this.form.id];
+    if (!$(this).isValid(settings.validators)) {
+      valid = false
+    }
+  });
+  
+  // if any of the inputs are invalid we want to disrupt the click event
+  return valid;
+}
